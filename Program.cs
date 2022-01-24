@@ -18,9 +18,31 @@ namespace weatherio
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
+                .ConfigureServices((context, services) =>
+                {
+                    HostConfig.CertPath = context.Configuration["CertPath"];//from JSON Files
+                    HostConfig.CertPasswoord = context.Configuration["CertPassword"];//from Secret Manager storage, in user profile app data 
+                })
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
+                    webBuilder.ConfigureKestrel(serverOptions =>
+                    {
+                        //serverOptions.UseHttps(HostConfig.CertPath, HostConfig.CertPasswoord);
+                        serverOptions.ListenAnyIP(5200);
+                        serverOptions.ListenAnyIP(5201, listenOptions =>
+                        {
+                            listenOptions.UseHttps(HostConfig.CertPath, HostConfig.CertPasswoord);
+                        });
+                    });
+
                     webBuilder.UseStartup<Startup>();
                 });
+    }
+
+    public static class HostConfig
+    {
+        public static string CertPath { get; set; }
+        public static string CertPasswoord { get; set; }
+
     }
 }
